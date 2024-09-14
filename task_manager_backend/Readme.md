@@ -7,9 +7,9 @@ The backend service is containerized using Docker to simplify the development an
 ### Prerequisites
 Before getting started, ensure you have the following installed on your local machine:
 
-    Docker
-    Docker Compose
-    Maven (for building the project)
+- Docker
+- Docker Compose
+- Maven (for building the project)
 
 ### Project Setup
 Follow these steps to set up and run the backend service in a Docker container:
@@ -33,5 +33,5 @@ This command will:
 
 
 ### Additional Notes
-You can modify the Spring Boot application properties (such as the database URL, username, and password) in the application.properties file.
-For production environments, ensure sensitive data like database credentials are managed securely (e.g., using environment variables).
+- You can modify the Spring Boot application properties (such as the database URL, username, and password) in the application.properties file.
+- For production environments, ensure sensitive data like database credentials are managed securely (e.g., using environment variables).
