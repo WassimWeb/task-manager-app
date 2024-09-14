@@ -27,7 +27,6 @@ To start the services, run the following command:
 docker-compose up --build
 ```
 This command will:
-
     Build the Docker image for the backend service.
     Set up the PostgreSQL database in a separate container.
     Expose the backend service on port 8080 (configurable in the docker-compose.yml file).,
