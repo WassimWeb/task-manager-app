@@ -12,9 +12,9 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
-
+import org.springframework.security.core.AuthenticationException;
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/auth")
 public class AuthController {
 
     @Autowired
@@ -44,10 +44,30 @@ public class AuthController {
     public String registerUser(@RequestBody User user) {
         return "User registered successfully";
     }
+
+    @PostMapping("/login")
+    public String login(@RequestParam String username, @RequestParam String password) throws Exception {
+        try {
+            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
+        } catch (AuthenticationException e) {
+            throw new Exception("Invalid credentials");
+        }
+
+        final UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+        return jwtUtil.generateToken(userDetails);
+    }
 }
 @Data
 @NoArgsConstructor
 class AuthRequest {
+    private String email;
+    private String password;
+
+}
+
+@Data
+@NoArgsConstructor
+class AuthResponse {
     private String email;
     private String password;
 
