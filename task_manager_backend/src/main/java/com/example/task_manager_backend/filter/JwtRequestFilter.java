@@ -27,28 +27,46 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     private CustomUserDetailsService userDetailsService;
 
     @Override
-    protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain chain)
-            throws ServletException, IOException {
+    protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
+            @NonNull FilterChain chain) throws ServletException, IOException {
         final String authorizationHeader = request.getHeader("Authorization");
-
+    
         String username = null;
         String jwt = null;
-
-        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
-            jwt = authorizationHeader.substring(7);
-            username = jwtUtil.extractUsername(jwt);
+    
+        // Skip JWT validation for /auth/login endpoint
+        String requestURI = request.getRequestURI();
+        if ("/auth/login".equals(requestURI)) {
+            chain.doFilter(request, response);
+            return;
         }
-
+    
+        // Extract JWT token from Authorization header
+        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+            jwt = authorizationHeader.substring(7);  // Extract token after 'Bearer '
+            try {
+                username = jwtUtil.extractUsername(jwt); // Get username from token
+            } catch (Exception e) {
+                logger.error("JWT token extraction failed: " + e.getMessage());  // Log failure
+            }
+        }
+    
+        // Check if username is extracted and no authentication context is set
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
-
-            if (jwtUtil.validateToken(jwt, userDetails.getUsername())) {
+    
+            // Validate the token with the entire UserDetails object
+            if (jwtUtil.validateToken(jwt, userDetails)) {
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities());
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+                SecurityContextHolder.getContext().setAuthentication(authToken);  // Set security context
+            } else {
+                logger.error("JWT token validation failed.");
             }
         }
+        
+        // Continue the chain
         chain.doFilter(request, response);
     }
 }

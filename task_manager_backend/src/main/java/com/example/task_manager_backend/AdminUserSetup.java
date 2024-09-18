@@ -28,5 +28,8 @@ public class AdminUserSetup implements CommandLineRunner {
             userRepository.save(admin);
             System.out.println("Admin user created successfully!");
         }
+        else {
+            System.out.println("Admin alredy created!");
+        }
     }
 }

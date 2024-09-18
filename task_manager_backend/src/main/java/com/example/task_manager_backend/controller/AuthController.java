@@ -6,13 +6,15 @@ import com.example.task_manager_backend.util.JwtUtil;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.bind.annotation.*;
+
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -27,48 +29,49 @@ public class AuthController {
     private JwtUtil jwtUtil;
 
     @PostMapping("/authenticate")
-    public String createAuthenticationToken(@RequestBody AuthRequest authRequest) throws Exception {
-        try {
-            authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(authRequest.getEmail(), authRequest.getPassword())
-            );
-        } catch (Exception e) {
-            throw new Exception("Invalid credentials", e);
-        }
-
-        final UserDetails userDetails = userDetailsService.loadUserByUsername(authRequest.getEmail());
-        return jwtUtil.generateToken(userDetails.getUsername());
+    public ResponseEntity<AuthResponse> createAuthenticationToken(@RequestBody AuthRequest authRequest) {
+        return authenticateAndGenerateToken(authRequest.getEmail(), authRequest.getPassword());
     }
 
     @PostMapping("/register")
-    public String registerUser(@RequestBody User user) {
-        return "User registered successfully";
+    public ResponseEntity<String> registerUser(@RequestBody User user) {
+        // Add logic for saving the user (if not done already)
+        return new ResponseEntity<>("User registered successfully", HttpStatus.CREATED);
     }
 
     @PostMapping("/login")
-    public String login(@RequestParam String username, @RequestParam String password) throws Exception {
+    public ResponseEntity<AuthResponse> login(@RequestBody AuthRequest authRequest) {
+        return authenticateAndGenerateToken(authRequest.getEmail(), authRequest.getPassword());
+    }
+
+    private ResponseEntity<AuthResponse> authenticateAndGenerateToken(String email, String password) {
         try {
-            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
+            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, password));
         } catch (AuthenticationException e) {
-            throw new Exception("Invalid credentials");
+            return new ResponseEntity<>(new AuthResponse("Invalid credentials", null), HttpStatus.UNAUTHORIZED);
         }
 
-        final UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-        return jwtUtil.generateToken(userDetails);
+        final UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+        final String jwt = jwtUtil.generateToken(userDetails.getUsername());
+        return new ResponseEntity<>(new AuthResponse(userDetails.getUsername(), jwt), HttpStatus.OK);
     }
 }
+
 @Data
 @NoArgsConstructor
 class AuthRequest {
     private String email;
     private String password;
-
 }
 
 @Data
 @NoArgsConstructor
 class AuthResponse {
     private String email;
-    private String password;
+    private String token;
 
+    public AuthResponse(String email, String token) {
+        this.email = email;
+        this.token = token;
+    }
 }
